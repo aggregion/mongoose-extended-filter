@@ -1,4 +1,4 @@
-# mongoose-extended-filter
+# mongoose-extended-filter [![Build Status](https://travis-ci.org/aggregion/mongoose-extended-filter.svg?branch=master)](https://travis-ci.org/aggregion/mongoose-extended-filter)
 Extended filter for Mongoose
 
 ## Use
