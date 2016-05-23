@@ -1,5 +1,7 @@
+'use strict';
+
 var mongoose = require('mongoose');
-var plugin = require('../../index')(mongoose);
+var plugin = require('../../index');
 var Schema = mongoose.Schema;
 
 var docSchema = new Schema({

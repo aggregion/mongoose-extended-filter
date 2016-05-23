@@ -1,6 +1,6 @@
 {
   "name": "mongoose-extended-filter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Extended filter for Mongoose",
   "main": "index.js",
   "scripts": {
@@ -18,18 +18,20 @@
     "node": ">=4.0.0"
   },
   "author": "Alexey Kheben <i@zbit.name> (https://github.com/zbitname)",
+  "contributors": [
+    {
+      "name": "Chetverikov Maksim",
+      "email": "ma.chetverikov@gmail.com"
+    }
+  ],
   "license": "ISC",
   "dependencies": {
-    "async": "^1.5.2",
     "mongo-dot-notation-tool": "^1.0.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",
     "eslint-config-google": "^0.5.0",
     "faker": "^3.1.0",
-    "gulp": "^3.9.1",
-    "gulp-exit": "0.0.2",
-    "gulp-mocha": "^2.2.0",
     "mocha": "^2.4.5",
     "mongoose": "^4.4.10"
   },

@@ -1,89 +1,92 @@
-var async = require('async');
-var mongoDotNotationTool = require('mongo-dot-notation-tool');
-var encodeDotNotation = mongoDotNotationTool.encode;
-var decodeDotNotation = mongoDotNotationTool.decode;
+'use strict';
 
-module.exports = function extendedFilter(mongoose) {
-  return function(schema) {
-    schema.methods.prepareConditions = prepareConditions(mongoose, schema);
-    schema.statics.prepareConditions = prepareConditions(mongoose, schema);
-  };
+const mongoDotNotationTool = require('mongo-dot-notation-tool');
+const mongoose = require('mongoose');
+const encodeDotNotation = mongoDotNotationTool.encode;
+const decodeDotNotation = mongoDotNotationTool.decode;
+
+module.exports = function(schema) {
+  schema.methods.prepareConditions =
+    schema.statics.prepareConditions = prepareConditions(schema);
 };
 
 /**
- * Prepare condition for final query
- * @param {Object} mongoose Iinstance of Mongoose
- * @param {Object} schema Current schema of model
- * @return {function}
+ * Wrap for prepare conditions func
+ *
+ * @param {Schema} schema Schema of model
+ * @returns {Function}
  */
-function prepareConditions(mongoose, schema) {
+function prepareConditions(schema) {
+  /**
+   * Prepare condition for final query
+   *
+   * @param {Object} conditions Query conditions
+   * @param {Function} callback End callback
+   * @returns {Promise}
+   */
   return function(conditions, callback) {
-    var parsedCondition = decodeDotNotation(conditions);
+    const parsedCondition = decodeDotNotation(conditions);
 
-    _process(mongoose, schema.tree, parsedCondition, function(err, resultConditions) {
-      if (err) {
-        return callback(err);
-      }
+    return _process(schema.tree, parsedCondition)
+      .then(resultConditions => {
+        const encoded = encodeDotNotation(resultConditions);
 
-      callback(null, encodeDotNotation(resultConditions));
-    });
+        if (callback) {
+          return callback(null, encoded);
+        }
+
+        return encoded;
+      });
   };
 }
 
 /**
  * Main function (query maker)
- * @param {Object} mongoose Instance of Mongoose
+ *
  * @param {Object} tree Model tree from Schema.tree
  * @param {Object|Array} conditions Input conditions
- * @param {Function} cb Callback
  * @return {*}
  */
-function _process(mongoose, tree, conditions, cb) {
-  async.eachSeries(Object.keys(conditions), function(path, next) {
-    if (['$and', '$or'].indexOf(path) >= 0) {
-      return async.eachSeries(conditions[path], (_conditions, next) => {
-        _process(mongoose, tree, _conditions, next);
-      }, next);
-    }
-
-    if (['$in', '$nin'].indexOf(path) >= 0) {
-      return next(null);
-    }
-
-    if (['$eq', '$gt', '$gte', '$lt', '$lte', '$ne'].indexOf(path) >= 0) {
-      return next(null);
-    }
-
-    var refModelName = null;
-
-    if (tree[path] && tree[path].ref) {
-      refModelName = tree[path].ref;
-
-      if (!isArray(conditions[path]) && isObject(conditions[path])) {
-        var refModel = mongoose.models[refModelName];
-
-        return prepareConditions(mongoose, refModel.schema)(conditions[path], (err, preparedConditions) => {
-          if (err) {
-            return next(err);
-          }
-
-          refModel.distinct('_id', preparedConditions, function(err, ids) {
-            if (err) {
-              return next(err);
-            }
-
-            conditions[path] = {$in: ids};
-
-            next(null);
-          });
-        });
+function _process(tree, conditions) {
+  const promises = Object.keys(conditions)
+    .map(path => {
+      if (['$and', '$or'].indexOf(path) >= 0) {
+        return Promise.all(
+          conditions[path].map(_conditions => {
+            return _process(tree, _conditions);
+          })
+        );
       }
-    }
 
-    next(null);
-  }, err => {
-    cb(err, conditions);
-  });
+      if (['$in', '$nin'].indexOf(path) >= 0) {
+        return null;
+      }
+
+      if (['$eq', '$gt', '$gte', '$lt', '$lte', '$ne'].indexOf(path) >= 0) {
+        return null;
+      }
+
+      if (tree[path] && tree[path].ref) {
+        const refModelName = tree[path].ref;
+
+        if (!isArray(conditions[path]) && isObject(conditions[path])) {
+          const refModel = mongoose.models[refModelName];
+
+          return prepareConditions(refModel.schema)(conditions[path])
+            .then(preparedConditions =>
+              refModel.distinct('_id', preparedConditions)
+                .exec()
+                .then(ids => {
+                  conditions[path] = {$in: ids};
+                })
+            );
+        }
+      }
+
+      return null;
+    });
+
+  return Promise.all(promises).then(() => conditions);
 }
 
 /**

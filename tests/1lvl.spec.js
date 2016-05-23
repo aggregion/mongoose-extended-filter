@@ -1,69 +1,59 @@
+'use strict';
+
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
 
-var helper = require('./helper');
-var async = require('async');
-var faker = require('faker');
-var chai = require('chai');
-var expect = chai.expect;
-var Doc = require('./models/doc.model');
+const helper = require('./helper');
+const faker = require('faker');
+const chai = require('chai');
+const expect = chai.expect;
+const Doc = require('./models/doc.model');
 
 describe('1 level', function() {
-  var docs = [];
+  let docs = [];
 
-  before(done => async.waterfall([
-    next => helper.connectToDb(next),
-    next => async.timesSeries(10, (n, next) => {
-      new Doc({
-        name: faker.name.firstName(),
-        path: {
-          subpath: {
-            name: faker.name.firstName()
-          }
-        }
-      })
-      .save()
+  before(() =>
+    helper.promiseSeries([
+        helper.connectToDb(),
+        helper.times(10, () => {
+          return new Doc({
+            name: faker.name.firstName(),
+            path: {
+              subpath: {
+                name: faker.name.firstName()
+              }
+            }
+          })
+          .save();
+        })
+      ])
+      .then(saved => (docs = saved))
+  );
+
+  after(() => helper.promiseSeries([
+    Doc.remove(),
+    helper.disconnectFromDb()
+  ]));
+
+  it('simple filter by Doc.name', () => {
+    const testDoc = docs[1];
+
+    return Doc.prepareConditions({name: testDoc.name})
+      .then(conditions => Doc.find(conditions))
       .then(doc => {
-        docs.push(doc);
-        next(null);
-      }, err => next(err));
-    }, next)
-  ], done));
-
-  after(done => async.waterfall([
-    next => Doc.remove({}, next),
-    (n, next) => helper.disconnectFromDb(next)
-  ], done));
-
-  it('simple filter by Doc.name', done => {
-    var testDoc = docs[1];
-
-    Doc.prepareConditions({name: testDoc.name}, (err, conditions) => {
-      expect(err).is.null;
-
-      Doc.find(conditions, (err, doc) => {
-        expect(err).is.null;
         expect(doc).to.be.an('array');
         expect(doc).to.have.length(docs.filter(item => item.name === testDoc.name).length);
-
-        done(null);
       });
-    });
   });
 
-  it('simple filter by Doc.path.subpath.name', done => {
-    var testDoc = docs[1];
+  it('simple filter by Doc.path.subpath.name', () => {
+    const testDoc = docs[1];
 
-    Doc.prepareConditions({'path.subpath.name': testDoc.path.subpath.name}, (err, conditions) => {
-      expect(err).is.null;
-
-      Doc.find(conditions, (err, doc) => {
-        expect(err).is.null;
+    return Doc.prepareConditions({'path.subpath.name': testDoc.path.subpath.name})
+      .then(conditions => Doc.find(conditions))
+      .then(doc => {
         expect(doc).to.be.an('array');
         expect(doc).to.have.length(docs.filter(item => item.path.subpath.name === testDoc.path.subpath.name).length);
-
-        done(null);
       });
-    });
   });
 });

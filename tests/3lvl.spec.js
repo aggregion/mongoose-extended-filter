@@ -1,3 +1,5 @@
+'use strict';
+
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
 
@@ -15,51 +17,44 @@ describe('3 level', function() {
   var SUBDOCS = [];
   var SUBSUBDOCS = [];
 
-  before(done => async.waterfall([
-    next => helper.connectToDb(next),
-    next => async.timesSeries(10, (n, next) => {
-      new Doc({
-        name: faker.name.firstName(),
-        path: {
-          subpath: {
-            name: faker.name.firstName()
-          }
-        }
-      })
-      .save()
-      .then(doc => {
-        DOCS.push(doc);
-        next(null);
-      }, err => next(err));
-    }, next),
-    (tmp, next) => async.eachSeries(DOCS, (doc, next) => {
-      new Subdoc({
-        name: faker.name.firstName(),
-        doc: doc._id
-      })
-      .save()
-      .then(doc => {
-        SUBDOCS.push(doc);
-        next(null);
-      }, err => next(err));
-    }, next),
-    next => async.eachSeries(SUBDOCS, (subdoc, next) => {
-      new Subsubdoc({
-        name: faker.name.firstName(),
-        subdoc: subdoc._id
-      })
-      .save()
-      .then(doc => {
-        SUBSUBDOCS.push(doc);
-        next(null);
-      }, err => next(err));
-    }, next)
-  ], done));
+  before(() =>
+    helper
+      .promiseSeries([
+        helper.connectToDb(),
+        helper
+          .times(10, () => {
+            return Doc.create({
+              name: faker.name.firstName(),
+              path: {
+                subpath: {
+                  name: faker.name.firstName()
+                }
+              }
+            });
+          })
+          .then(saved => {
+            DOCS = saved;
 
-  after(done => async.waterfall([
-    next => Doc.remove({}, next),
-    (n, next) => helper.disconnectFromDb(next)
-  ], done));
+            return Promise.all(
+              DOCS.map(doc => Subdoc.create({
+                name: faker.name.firstName(),
+                doc: doc._id
+              }))
+            );
+          })
+          .then(saved => {
+            SUBDOCS = saved;
+
+            return Promise.all(
+              SUBDOCS.map(doc => Subsubdoc.create({
+                name: faker.name.firstName(),
+                subdoc: doc._id
+              }))
+            );
+          })
+          .then(saved => (SUBSUBDOCS = saved))
+      ])
+  );
 
   it('filter by Subsubdoc.subdoc.doc.name', done => {
     var testDoc = DOCS[1];
