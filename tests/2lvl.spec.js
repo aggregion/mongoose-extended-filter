@@ -11,7 +11,7 @@ var expect = chai.expect;
 var Doc = require('./models/doc.model');
 var Subdoc = require('./models/subdoc.model');
 
-describe.only('2 level', () => {
+describe('2 level', () => {
   let DOCS = [];
   let SUBDOCS = [];
 

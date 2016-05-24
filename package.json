@@ -4,7 +4,7 @@
   "description": "Extended filter for Mongoose",
   "main": "index.js",
   "scripts": {
-    "test": "gulp test"
+    "test": "make"
   },
   "keywords": [
     "mongoose",

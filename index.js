@@ -68,6 +68,11 @@ function _process(tree, conditions) {
 
       if (tree[path] && tree[path].ref) {
         const refModelName = tree[path].ref;
+        
+        if (isObject(conditions[path]) &&
+          Object.keys(conditions[path]).every(cond => cond.charAt(0) === '$' && cond !== '$text' && !isArray(conditions[path][cond]))) {
+          return null;
+        }
 
         if (!isArray(conditions[path]) && isObject(conditions[path])) {
           const refModel = mongoose.models[refModelName];
