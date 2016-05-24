@@ -4,7 +4,6 @@
 /* eslint-disable no-unused-expressions */
 
 var helper = require('./helper');
-var async = require('async');
 var faker = require('faker');
 var chai = require('chai');
 var expect = chai.expect;
