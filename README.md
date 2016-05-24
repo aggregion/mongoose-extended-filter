@@ -3,14 +3,14 @@ Extended filter for Mongoose
 
 ## Use
 ```javascript
-var mongoose = require('mongoose');
-var mongooseExtendedFilter = require('mongoose-extended-filter');
+const mongoose = require('mongoose');
+const mongooseExtendedFilter = require('mongoose-extended-filter');
 
-var treeSchema = new mongoose.Schema({
+const treeSchema = new mongoose.Schema({
   name: String
 });
 
-var branchSchema = new mongoose.Schema({
+const branchSchema = new mongoose.Schema({
   name: String,
   tree: {
     type: ObjectId,
@@ -21,21 +21,25 @@ var branchSchema = new mongoose.Schema({
 treeSchema.plugin(mongooseExtendedFilter);
 branchSchema.plugin(mongooseExtendedFilter);
 
-var Tree = mongoose.model('Tree', treeSchema);
-var Branch = mongoose.model('Branch', branchSchema);
+const Tree = mongoose.model('Tree', treeSchema);
+const Branch = mongoose.model('Branch', branchSchema);
 
-Branch.prepareConditions({tree: {name: 'Billy'}}, function(err, conditions) {
-  // conditions = {tree: {$in: [...]}
-  Branch.find(conditions, function(err, branches) {
+Branch.prepareConditions({tree: {name: 'Billy'}})
+  .then(conditions => {
+    // conditions = {tree: {$in: [...]}
+    return Branch.find(conditions).exec();
+  })
+  .then(branches => {
     // some code
   });
-});
 
 // or with dot-notation
-Branch.prepareConditions({'tree.name': 'Billy'}, function(err, conditions) {
-  // conditions = {tree: {$in: [...]}
-  Branch.find(conditions, function(err, branches) {
+Branch.prepareConditions({'tree.name': 'Billy'})
+  .then(conditions => {
+    // conditions = {tree: {$in: [...]}
+    return Branch.find(conditions).exec()
+  })
+  .then(branches => {
     // some code
   });
-});
 ```

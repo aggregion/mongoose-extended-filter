@@ -1,24 +1,38 @@
-var mongoose = require('mongoose');
-var async = require('async');
-var db = mongoose.connection;
-var pkg = require('../package.json');
+'use strict';
+
+const mongoose = require('mongoose');
+const pkg = require('../package.json');
 
 module.exports = {
-  connectToDb: cb => {
+  connectToDb: () => {
     if (mongoose.connection.readyState !== 1) {
-      mongoose.connect(`mongodb://localhost/${pkg.name}-test`);
-      return db.once('open', cb);
+      return mongoose.connect(`mongodb://localhost/${pkg.name}-test`);
     }
 
-    cb(null);
+    return Promise.resolve();
   },
-  disconnectFromDb: cb => {
-    var colls = mongoose.connection.collections;
+  disconnectFromDb: () => {
+    const colls = mongoose.connection.collections;
+    const removes = [];
 
-    async.eachSeries(Object.keys(colls), (collectionName, next) => {
-      colls[collectionName].remove({}, next);
-    }, err => {
-      cb(err);
-    });
+    Object.keys(colls).forEach(collectionName => removes.push(colls[collectionName].remove()));
+
+    return Promise.all(removes);
+  },
+  times(number, func) {
+    let i = 0;
+    const promises = [];
+
+    while(i++ <= number){
+      promises.push(func());
+    }
+
+    return Promise.all(promises);
+  },
+  promiseSeries(promises) {
+    return promises.reduce(
+      (previous, promise) => previous.then(() => promise),
+      Promise.resolve()
+    );
   }
 };
