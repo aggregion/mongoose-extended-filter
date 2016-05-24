@@ -1,52 +1,53 @@
+'use strict';
+
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
 
 var helper = require('./helper');
-var async = require('async');
 var faker = require('faker');
 var chai = require('chai');
 var expect = chai.expect;
 var Doc = require('./models/doc.model');
 var Subdoc = require('./models/subdoc.model');
 
-describe('2 level', function() {
-  var DOCS = [];
-  var SUBDOCS = [];
+describe('2 level', () => {
+  let DOCS = [];
+  let SUBDOCS = [];
 
-  before(done => async.waterfall([
-    next => helper.connectToDb(next),
-    next => async.timesSeries(10, (n, next) => {
-      new Doc({
-        name: faker.name.firstName(),
-        path: {
-          subpath: {
-            name: faker.name.firstName()
-          }
-        }
-      })
-      .save()
-      .then(doc => {
-        DOCS.push(doc);
-        next(null);
-      }, err => next(err));
-    }, next),
-    (tmp, next) => async.eachSeries(DOCS, (doc, next) => {
-      new Subdoc({
-        name: faker.name.firstName(),
-        doc: doc._id
-      })
-      .save()
-      .then(doc => {
-        SUBDOCS.push(doc);
-        next(null);
-      }, err => next(err));
-    }, next)
-  ], done));
+  before(() =>
+    helper
+      .promiseSeries([
+        helper.connectToDb(),
+        helper
+          .times(10, () => {
+            return Doc.create({
+              name: faker.name.firstName(),
+              path: {
+                subpath: {
+                  name: faker.name.firstName()
+                }
+              }
+            });
+          })
+          .then(saved => {
+            DOCS = saved;
 
-  after(done => async.waterfall([
-    next => Doc.remove({}, next),
-    (n, next) => helper.disconnectFromDb(next)
-  ], done));
+            return Promise.all(
+              DOCS.map(doc => Subdoc.create({
+                name: faker.name.firstName(),
+                doc: doc._id
+              }))
+            );
+          })
+          .then(saved => (SUBDOCS = saved))
+      ])
+  );
+
+  after(() => helper.promiseSeries([
+    Doc.remove(),
+    Subdoc.remove(),
+    helper.disconnectFromDb()
+  ]));
 
   it('simple filter by Subdoc.name', done => {
     var testSubdoc = SUBDOCS[1];
