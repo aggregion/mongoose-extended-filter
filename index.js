@@ -36,7 +36,8 @@ function prepareConditions(schema) {
         }
 
         return encoded;
-      });
+      })
+      .catch(callback);
   };
 }
 
@@ -50,7 +51,7 @@ function prepareConditions(schema) {
 function _process(tree, conditions) {
   const promises = Object.keys(conditions)
     .map(path => {
-      if (['$and', '$or'].indexOf(path) >= 0) {
+      if (isExtendedOperator(path)) {
         return Promise.all(
           conditions[path].map(_conditions => {
             return _process(tree, _conditions);
@@ -58,19 +59,14 @@ function _process(tree, conditions) {
         );
       }
 
-      if (['$in', '$nin'].indexOf(path) >= 0) {
-        return null;
-      }
-
-      if (['$eq', '$gt', '$gte', '$lt', '$lte', '$ne'].indexOf(path) >= 0) {
+      if (isQueryOperator(path)) {
         return null;
       }
 
       if (tree[path] && tree[path].ref) {
         const refModelName = tree[path].ref;
-        
-        if (isObject(conditions[path]) &&
-          Object.keys(conditions[path]).every(cond => cond.charAt(0) === '$' && cond !== '$text' && !isArray(conditions[path][cond]))) {
+
+        if (isObject(conditions[path]) && isSkipCondition(conditions[path])) {
           return null;
         }
 
@@ -92,6 +88,36 @@ function _process(tree, conditions) {
     });
 
   return Promise.all(promises).then(() => conditions);
+}
+
+/**
+ * Checks need whether to go deeper in this condition.
+ *
+ * @param {Object} condition Query condition
+ * @returns {Boolean}
+ */
+function isSkipCondition(condition) {
+  return Object.keys(condition).every(key => isQueryOperator(key) && !isExtendedOperator(key));
+}
+
+/**
+ * Is extended operator
+ *
+ * @param {String} operator MongoDB Query operator
+ * @returns {boolean}
+ */
+function isExtendedOperator(operator) {
+  return operator === '$and' || operator === '$or';
+}
+
+/**
+ * Is mongodb query operator
+ *
+ * @param {String} operator MongoDB Query operator
+ * @returns {boolean}
+ */
+function isQueryOperator(operator) {
+  return ['$in', '$nin', '$eq', '$gt', '$gte', '$lt', '$lte', '$ne'].indexOf(operator) >= 0;
 }
 
 /**
