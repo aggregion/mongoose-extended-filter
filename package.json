@@ -1,6 +1,6 @@
 {
   "name": "mongoose-extended-filter",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Extended filter for Mongoose",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   ],
   "license": "ISC",
   "dependencies": {
-    "mongo-dot-notation-tool": "^1.0.0"
+    "mongo-dot-notation-tool": "1.0.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
