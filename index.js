@@ -1,11 +1,15 @@
 'use strict';
 
 const mongoDotNotationTool = require('mongo-dot-notation-tool');
-const mongoose = require('mongoose');
 const encodeDotNotation = mongoDotNotationTool.encode;
 const decodeDotNotation = mongoDotNotationTool.decode;
+let mongoose;
 
-module.exports = function(schema) {
+module.exports = function(schema, options) {
+  options = options || {};
+
+  mongoose = options.mongoose || require('mongoose'); // lasy load
+
   schema.methods.prepareConditions =
     schema.statics.prepareConditions = prepareConditions(schema);
 };

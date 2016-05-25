@@ -1,6 +1,6 @@
 {
   "name": "mongoose-extended-filter",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Extended filter for Mongoose",
   "main": "index.js",
   "scripts": {
@@ -34,7 +34,7 @@
     "eslint-config-google": "^0.5.0",
     "faker": "^3.1.0",
     "mocha": "^2.4.5",
-    "mongoose": "^4.4.10"
+    "mongoose": "^4.4.0"
   },
   "directories": {
     "test": "tests"
