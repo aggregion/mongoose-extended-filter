@@ -35,7 +35,15 @@ describe('2 level', () => {
             return Promise.all(
               DOCS.map(doc => Subdoc.create({
                 name: faker.name.firstName(),
-                doc: doc._id
+                doc: doc._id,
+                docPathAsSchema: {
+                  doc: doc._id
+                },
+                path: {
+                  subpath: {
+                    doc: doc._id
+                  }
+                }
               }))
             );
           })
@@ -109,6 +117,69 @@ describe('2 level', () => {
         var docIds = DOCS.filter(item => item.path.subpath.name === testDoc.path.subpath.name).map(item => item.id);
 
         expect(docs).to.have.length(SUBDOCS.filter(item => docIds.indexOf(item.doc.toString()) >= 0).length);
+
+        done(null);
+      });
+    });
+  });
+
+  it('filter by Subdoc.path.subpath.doc.name', done => {
+    var testDoc = DOCS[1];
+
+    Subdoc.prepareConditions({'path.subpath.doc.name': testDoc.name}, (err, conditions) => {
+      expect(err).is.null;
+
+      Subdoc.find(conditions, (err, docs) => {
+        expect(err).is.null;
+        expect(docs).to.be.an('array');
+
+        var docIds = DOCS.filter(item => item.name === testDoc.name).map(item => item.id);
+
+        expect(docs).to.have.length(SUBDOCS.filter(item => docIds.includes(item.doc.toString())).length);
+
+        done(null);
+      });
+    });
+  });
+
+  it('filter by Subdoc.docPathAsSchema.doc.name', done => {
+    var testDoc = DOCS[1];
+
+    Subdoc.prepareConditions({'docPathAsSchema.doc.name': testDoc.name}, (err, conditions) => {
+      expect(err).is.null;
+
+      Subdoc.find(conditions, (err, docs) => {
+        expect(err).is.null;
+        expect(docs).to.be.an('array');
+
+        var docIds = DOCS.filter(item => item.name === testDoc.name).map(item => item.id);
+
+        expect(docs).to.have.length(SUBDOCS.filter(item => docIds.indexOf(item.doc.toString()) >= 0).length);
+
+        done(null);
+      });
+    });
+  });
+
+  it('filter by Subdoc.docPathAsSchema.doc.name AND Subdoc.name', done => {
+    var testDoc = DOCS[1];
+    var testSubdoc = SUBDOCS.find(item => String(item.docPathAsSchema.doc) === testDoc.id);
+
+    Subdoc.prepareConditions({
+      'docPathAsSchema.doc.name': testDoc.name,
+      'name': testSubdoc.name
+    }, (err, conditions) => {
+      expect(err).is.null;
+
+      Subdoc.find(conditions, (err, docs) => {
+        expect(err).is.null;
+        expect(docs).to.be.an('array');
+
+        var docIds = DOCS.filter(
+          item => item.name === testDoc.name
+        ).map(item => item.id);
+
+        expect(docs).to.have.length(SUBDOCS.filter(item => docIds.includes(item.doc.toString()) && item.name === testSubdoc.name).length);
 
         done(null);
       });

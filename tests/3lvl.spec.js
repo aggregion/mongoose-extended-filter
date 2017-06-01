@@ -51,7 +51,9 @@ describe('3 level', function() {
               }))
             );
           })
-          .then(saved => (SUBSUBDOCS = saved))
+          .then(saved => {
+            SUBSUBDOCS = saved;
+          })
       ])
   );
 

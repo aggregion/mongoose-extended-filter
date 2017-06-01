@@ -6,7 +6,13 @@ const pkg = require('../package.json');
 module.exports = {
   connectToDb: () => {
     if (mongoose.connection.readyState !== 1) {
-      return mongoose.connect(`mongodb://localhost/${pkg.name}-test`);
+      let mongoHost = 'localhost';
+
+      if (process.env.MONGO_HOST) {
+        mongoHost = process.env.MONGO_HOST;
+      }
+
+      return mongoose.connect(`mongodb://${mongoHost}/${pkg.name}-test`);
     }
 
     return Promise.resolve();
@@ -23,7 +29,7 @@ module.exports = {
     let i = 0;
     const promises = [];
 
-    while(i++ <= number){
+    while (i++ <= number) {
       promises.push(func());
     }
 
