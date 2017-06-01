@@ -1,0 +1,8 @@
+node_modules
+test
+Makefile
+*.sublime-*
+.idea
+.eslint*
+.gitignore
+.travis.yml
