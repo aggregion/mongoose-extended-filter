@@ -10,8 +10,7 @@ module.exports = function(schema, options) {
 
   mongoose = options.mongoose || require('mongoose'); // lasy load
 
-  schema.methods.prepareConditions =
-    schema.statics.prepareConditions = prepareConditions(schema);
+  schema.methods.prepareConditions = schema.statics.prepareConditions = prepareConditions(schema);
 };
 
 /**
@@ -62,7 +61,7 @@ function _process(tree, conditions) {
           })
         );
       }
-
+      // console.log(prevPath, tree);
       if (isQueryOperator(path)) {
         return null;
       }
@@ -80,18 +79,37 @@ function _process(tree, conditions) {
           return prepareConditions(refModel.schema)(conditions[path])
             .then(preparedConditions =>
               refModel.distinct('_id', preparedConditions)
-                .exec()
-                .then(ids => {
-                  conditions[path] = {$in: ids};
-                })
+              .exec()
+              .then(ids => {
+                conditions[path] = {
+                  $in: ids
+                };
+              })
             );
         }
+      } else if (isObject(conditions[path])) {
+        if (isSchema(tree[path])) {
+          return _process(tree[path].tree, conditions[path]);
+        }
+        return _process(tree[path], conditions[path]);
       }
 
       return null;
     });
 
-  return Promise.all(promises).then(() => conditions);
+  return Promise.all(promises).then(() => {
+    return conditions;
+  });
+}
+
+/**
+ * Checks value is Schema.
+ *
+ * @param {*} value Value
+ * @returns {Boolean}
+ */
+function isSchema(value) {
+  return value instanceof mongoose.Schema;
 }
 
 /**
@@ -121,7 +139,7 @@ function isExtendedOperator(operator) {
  * @returns {boolean}
  */
 function isQueryOperator(operator) {
-  return ['$in', '$nin', '$eq', '$gt', '$gte', '$lt', '$lte', '$ne'].indexOf(operator) >= 0;
+  return ['$in', '$nin', '$eq', '$gt', '$gte', '$lt', '$lte', '$ne', '$search'].indexOf(operator) >= 0;
 }
 
 /**
@@ -135,8 +153,8 @@ function isObject(value) {
 
 /**
  * Check input data for Array
- * @param  {[type]}  value [description]
- * @return {Boolean}       [description]
+ * @param {*} value Value
+ * @return {Boolean}
  */
 function isArray(value) {
   return value && Array.isArray(value);
