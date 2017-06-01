@@ -139,7 +139,7 @@ function isExtendedOperator(operator) {
  * @returns {boolean}
  */
 function isQueryOperator(operator) {
-  return ['$in', '$nin', '$eq', '$gt', '$gte', '$lt', '$lte', '$ne', '$search'].indexOf(operator) >= 0;
+  return ['$in', '$nin', '$eq', '$gt', '$gte', '$lt', '$lte', '$ne', '$search', '$regex', '$options'].indexOf(operator) >= 0;
 }
 
 /**

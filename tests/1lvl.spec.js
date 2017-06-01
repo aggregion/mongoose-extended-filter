@@ -14,20 +14,22 @@ describe('1 level', function() {
 
   before(() =>
     helper.promiseSeries([
-        helper.connectToDb(),
-        helper.times(10, () => {
-          return new Doc({
-            name: faker.name.firstName(),
-            path: {
-              subpath: {
-                name: faker.name.firstName()
-              }
+      helper.connectToDb(),
+      helper.times(10, () => {
+        return new Doc({
+          name: faker.name.firstName(),
+          path: {
+            subpath: {
+              name: faker.name.firstName()
             }
-          })
-          .save();
+          }
         })
-      ])
-      .then(saved => (docs = saved))
+        .save();
+      })
+    ])
+    .then(saved => {
+      docs = saved;
+    })
   );
 
   after(() => helper.promiseSeries([
@@ -50,6 +52,27 @@ describe('1 level', function() {
     const testDoc = docs[1];
 
     return Doc.prepareConditions({'path.subpath.name': testDoc.path.subpath.name})
+      .then(conditions => Doc.find(conditions))
+      .then(doc => {
+        expect(doc).to.be.an('array');
+        expect(doc).to.have.length(docs.filter(item => item.path.subpath.name === testDoc.path.subpath.name).length);
+      });
+  });
+
+  it('filter with $regex', () => {
+    const testDoc = docs[1];
+    const name = testDoc.path.subpath.name;
+
+    return Doc.prepareConditions({$and: [
+      {
+        'path.subpath.name': name
+      },
+      {
+        'path.subpath.name': {
+          $regex: new RegExp(name.slice(0, Math.round(name.length / 2)) + '.*' + name.slice(Math.round(name.length / 2) + 1), 'i')
+        }
+      }
+    ]})
       .then(conditions => Doc.find(conditions))
       .then(doc => {
         expect(doc).to.be.an('array');
