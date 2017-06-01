@@ -135,7 +135,7 @@ describe('2 level', () => {
 
         var docIds = DOCS.filter(item => item.name === testDoc.name).map(item => item.id);
 
-        expect(docs).to.have.length(SUBDOCS.filter(item => docIds.includes(item.doc.toString())).length);
+        expect(docs).to.have.length(SUBDOCS.filter(item => docIds.indexOf(item.doc.toString()) >= 0).length);
 
         done(null);
       });
@@ -179,7 +179,7 @@ describe('2 level', () => {
           item => item.name === testDoc.name
         ).map(item => item.id);
 
-        expect(docs).to.have.length(SUBDOCS.filter(item => docIds.includes(item.doc.toString()) && item.name === testSubdoc.name).length);
+        expect(docs).to.have.length(SUBDOCS.filter(item => docIds.indexOf(item.doc.toString()) >= 0 && item.name === testSubdoc.name).length);
 
         done(null);
       });
